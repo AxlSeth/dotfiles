@@ -1,0 +1,115 @@
+# =========================================
+# AXL2077 — Ghostty Config
+# =========================================
+# -----------------
+# Font
+# -----------------
+font-family = Hack Nerd Font Mono
+font-size = 12
+font-style = Bold
+font-thicken = true
+adjust-cell-height = -1
+adjust-cell-width = -1
+# -----------------
+# Window
+# -----------------
+window-decoration = false
+window-theme = ghostty
+window-titlebar-background = #1f1f28
+window-titlebar-foreground = #7e9cd8
+maximize = false
+gtk-titlebar = true
+gtk-titlebar-hide-when-maximized = true
+gtk-single-instance = true
+window-padding-x = 12
+window-padding-y = 10
+# -----------------
+# Background
+# -----------------
+background = #080811
+foreground = #f2ecbc
+background-opacity = 0.70
+
+# === [ Window Size & Position ] ===
+window-width = 180
+window-height = 50
+window-position-x = 0
+window-position-y = 20
+window-save-state = never
+
+# === [ Quick Terminal ] ===
+quick-terminal-position = top
+quick-terminal-screen = main
+quick-terminal-size = 60%,70%
+quick-terminal-animation-duration = 0.2
+keybind = ctrl+shift+grave_accent=toggle_quick_terminal
+
+# -----------------
+# Cursor
+# -----------------
+cursor-style = block
+cursor-style-blink = false
+cursor-color = #7e9cd8
+cursor-text = #1f1f28
+# -----------------
+# Selection
+# -----------------
+selection-background = #363646
+selection-foreground = #f2ecbc
+# -----------------
+# ANSI Palette
+# -----------------
+# black
+palette = 0=#1f1f28
+palette = 8=#363646
+# red
+palette = 1=#c34043
+palette = 9=#e46876
+# green
+palette = 2=#76946a
+palette = 10=#98bb6c
+# yellow
+palette = 3=#c0a36e
+palette = 11=#f2ecbc
+# blue
+palette = 4=#7e9cd8
+palette = 12=#7fb4ca
+# magenta
+palette = 5=#957fb8
+palette = 13=#938aa9
+# cyan
+palette = 6=#6a9589
+palette = 14=#7aa89f
+# white
+palette = 7=#c8c093
+palette = 15=#dcd7ba
+# -----------------
+# Shell Integration
+# -----------------
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+# -----------------
+# Performance
+# -----------------
+resize-overlay = always
+# -----------------
+# Clipboard
+# -----------------
+clipboard-read = allow
+clipboard-write = allow
+clipboard-paste-protection = false
+# -----------------
+# Mouse
+# -----------------
+mouse-hide-while-typing = true
+# -----------------
+# Misc
+# -----------------
+confirm-close-surface = false
+quit-after-last-window-closed = false
+title = "TIME"
+# -----------------
+# Shader
+# -----------------
+custom-shader = ~/.config/ghostty/shaders/shaderr.glsl
+# custom-shader = ~/.config/ghostty/shaders/shader.glsl

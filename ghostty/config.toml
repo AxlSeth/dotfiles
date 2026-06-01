@@ -1,0 +1,3 @@
+# Ghostty shader config
+enable-shaders = true
+custom-shader = "/home/seramaro/.config/ghostty/shaders/shader.glsl"
