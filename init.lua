@@ -6,7 +6,7 @@
 --   By: seramaro <seramaro@student.42antananarivo  +#+  +:+       +#+        --
 --                                                +#+#+#+#+#+   +#+           --
 --   Created: 2026/03/24 07:32:36 by seramaro          #+#    #+#             --
---   Updated: 2026/05/31 11:09:42 by seramaro         ###   ########.fr       --
+--   Updated: 2026/06/08 16:03:35 by seramaro         ###   ########.fr       --
 --                                                                            --
 -- ************************************************************************** --
 
@@ -22,14 +22,11 @@ vim.g.loaded_perl_provider    = 0
 vim.g.loaded_ruby_provider    = 0
 
 -- ── Native treesitter highlighting (replaces nvim-treesitter) ───────────────
--- nvim-treesitter is archived as of April 2026. Neovim 0.12 has treesitter
--- built in. We enable highlighting natively for the languages we use.
 vim.api.nvim_create_autocmd("FileType", {
   pattern  = { "c", "python", "lua", "bash", "regex" },
   callback = function()
     local ok, err = pcall(vim.treesitter.start)
     if not ok then
-      -- silently ignore if parser not available for this filetype
       _ = err
     end
   end,
@@ -93,189 +90,77 @@ do
   vim.api.nvim_set_hl(0, "SigFooter",  { fg = "#7a6050", italic = true })
 end
 
--- ── Dashboard ────────────────────────────────────────────────────────────────
+-- ── Dashboard (dashboard-nvim) ───────────────────────────────────────────────
 do
-  local ART = {
-    "",
-    "",
-    "                                                                       ",
-    "                                                                     ",
-    "       ████ ██████           █████      ██                     ",
-    "      ███████████             █████                             ",
-    "      █████████ ███████████████████ ███   ███████████   ",
-    "     █████████  ███    █████████████ █████ ██████████████   ",
-    "    █████████ ██████████ █████████ █████ █████ ████ █████   ",
-    "  ███████████ ███    ███ █████████ █████ █████ ████ █████  ",
-    " ██████  █████████████████████ ████ █████ █████ ████ ██████ ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-    "                                                                       ",
-  }
-  local MENU = {
-    { key = "n", label = "New file",     cmd = "enew" },
-    { key = "f", label = "Find file",    cmd = "Telescope find_files" },
-    { key = "g", label = "Grep text",    cmd = "Telescope live_grep" },
-    { key = "r", label = "Recent files", cmd = "Telescope oldfiles" },
-  }
-  local LEFT_W = 62
-  local function pad(s, w)
-    local dw = vim.fn.strdisplaywidth(s)
-    return dw < w and (s .. string.rep(" ", w - dw)) or s
-  end
-  local function right_lines()
-    local r             = { "", "" }
-    local project_paths = {}
-    local recent_paths  = {}
-    for i = 1, #MENU, 2 do
-      local a, b = MENU[i], MENU[i + 1]
-      local row = string.format("  %s  %-18s", a.key, a.label)
-      if b then row = row .. string.format("  %s  %s", b.key, b.label) end
-      r[#r + 1] = row
-    end
-    r[#r + 1] = ""
-    r[#r + 1] = "  -- け い か く ----------------------"
-    r[#r + 1] = ""
-    local seen, n = {}, 0
-    for _, f in ipairs(vim.v.oldfiles or {}) do
-      local d = vim.fn.fnamemodify(f, ":h")
-      if not seen[d] and vim.fn.isdirectory(d) == 1 then
-        seen[d], n = true, n + 1
-        project_paths[n] = d
-        r[#r + 1] = string.format("  %d  %s", n, vim.fn.fnamemodify(d, ":~"))
-        if n == 5 then break end
-      end
-    end
-    if n == 0 then r[#r + 1] = "  (none yet)" end
-    r[#r + 1] = ""
-    r[#r + 1] = "  -- さ い き ん ----------------------"
-    r[#r + 1] = ""
-    local rf = 0
-    for _, f in ipairs(vim.v.oldfiles or {}) do
-      if vim.fn.filereadable(f) == 1 then
-        rf = rf + 1
-        recent_paths[rf] = f
-        r[#r + 1] = string.format("  %d  %s", rf + n, vim.fn.fnamemodify(f, ":~"))
-        if rf == 5 then break end
-      end
-    end
-    if rf == 0 then r[#r + 1] = "  (none yet)" end
-    r[#r + 1] = ""
-    r[#r + 1] = "  THIS GOD WON'T FORGIVE YOU."
-    return r, project_paths, recent_paths, n
-  end
-  local ns = vim.api.nvim_create_namespace("signalis_dash")
-  local function open_dashboard()
-    local buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_win_set_buf(0, buf)
-    vim.bo[buf].buftype   = "nofile"
-    vim.bo[buf].bufhidden = "wipe"
-    vim.bo[buf].swapfile  = false
-    local rc, project_paths, recent_paths, n = right_lines()
-    local offset = math.max(0, math.floor((#ART - #rc) / 2))
-    local out    = {}
-    for i, art in ipairs(ART) do
-      local ri = i - offset
-      local r  = (ri >= 1 and ri <= #rc) and rc[ri] or ""
-      out[i]   = pad(art, LEFT_W) .. "  " .. r
-    end
-    vim.bo[buf].modifiable = true
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, out)
-    vim.bo[buf].modifiable = false
-    vim.bo[buf].modified   = false
-    vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-    for i, art in ipairs(ART) do
-      vim.api.nvim_buf_add_highlight(buf, ns, "SigArt", i - 1, 0, #art)
-    end
-    for ri, rline in ipairs(rc) do
-      local li = ri + offset - 1
-      if li >= 0 and li < #out then
-        local col = #ART[li + 1] + 2
-        if rline:match("^  %-%- ") then
-          vim.api.nvim_buf_add_highlight(buf, ns, "SigSection", li, col, -1)
-        elseif rline:match("THIS GOD") then
-          vim.api.nvim_buf_add_highlight(buf, ns, "SigFooter", li, col, -1)
-        elseif rline:match("^  %a  ") then
-	   for key, label in rline:gmatch("  (%a)  ([^ ]+)") do
-	    local start = rline:find("  " .. key .. "  ", 1, true)
-	    if start then
-	      local key_col = col + start + 1 -- position of the letter
-	      vim.api.nvim_buf_add_highlight(buf, ns, "SigKey", li, key_col, key_col + 1)
-	    end
-	  end
-        elseif rline:match("^  %d+  ") then
-	  local num = rline:match("^  (%d+)  ")
-	  local len = #num
-	  vim.api.nvim_buf_add_highlight(buf, ns, "SigNum",  li, col + 2, col + 2 + len)
-	  vim.api.nvim_buf_add_highlight(buf, ns, "SigFile", li, col + 4 + len, -1)
+  local ok, db = pcall(require, "dashboard")
+  if ok then
+    local startup_ms = math.floor(vim.fn.reltimefloat(vim.fn.reltime(_nvim_start)) * 1000)
+    local ns         = vim.api.nvim_create_namespace("db_shortcut_hl")
+
+    vim.api.nvim_set_hl(0, "DashboardHeader",   { fg = "#8c1c1c" })
+    vim.api.nvim_set_hl(0, "DashboardFooter",   { fg = "#7a6050", italic = true })
+    vim.api.nvim_set_hl(0, "DashboardShortcut", { fg = "#f2ecbc", bold = true })
+
+    db.setup({
+      theme = "doom",
+      hide  = { statusline = true, tabline = true, winbar = true },
+      config = {
+        header = {
+          "",
+          "",
+          "",
+	  "       ████ ██████           █████      ██                     ",
+  	  "      ███████████             █████                             ",
+  	  "      █████████ ███████████████████ ███   ███████████   ",
+  	  "     █████████  ███    █████████████ █████ ██████████████   ",
+  	  "    █████████ ██████████ █████████ █████ █████ ████ █████   ",
+  	  "  ███████████ ███    ███ █████████ █████ █████ ████ █████  ",
+  	  " ██████  █████████████████████ ████ █████ █████ ████ ██████ ",
+          "",
+          "",
+          "",
+          "  n  new           f  find     g  grep     r  recent     q  quit   ",
+          "",
+        },
+        center = {},
+        footer = {
+          string.format("⚡ %d ms  ·  THIS GOD WON'T FORGIVE YOU.", startup_ms),
+        },
+      },
+    })
+
+    -- Color the shortcut line + register keymaps on dashboard open
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern  = "dashboard",
+      callback = function()
+        -- Highlight override runs after buffer is fully rendered
+        vim.schedule(function()
+          local buf   = vim.api.nvim_get_current_buf()
+          local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+          for i, line in ipairs(lines) do
+            if line:find("new") and line:find("find") then
+              vim.api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
+                end_row  = i - 1,
+                end_col  = #line,
+                hl_group = "DashboardShortcut",
+                priority = 200,   -- overrides DashboardHeader red
+              })
+              break
+            end
+          end
+        end)
+
+        local map = function(k, cmd)
+          vim.keymap.set("n", k, cmd, { buffer = true, silent = true, nowait = true })
         end
-      end
-    end
-    local o = { buffer = buf, silent = true, nowait = true }
-    for _, m in ipairs(MENU) do
-      local c = m.cmd
-      vim.keymap.set("n", m.key, function() vim.cmd(c) end, o)
-    end
-    for i, path in ipairs(project_paths) do
-      local p = path
-      vim.keymap.set("n", tostring(i), function()
-        vim.cmd("cd " .. vim.fn.fnameescape(p))
-        vim.cmd("Telescope find_files")
-      end, o)
-    end
-    local project_count = n
-    for i, path in ipairs(recent_paths) do
-      local p   = path
-      local key = tostring(i + project_count)
-      vim.keymap.set("n", key, function()
-        vim.cmd("edit " .. vim.fn.fnameescape(p))
-      end, o)
-    end
-    vim.keymap.set("n", "q", "<cmd>qa<cr>", o)
-    local win = vim.api.nvim_get_current_win()
-    vim.opt_local_number         = false
-    vim.opt_local_relativenumber = false
-    vim.wo[win].cursorline       = false
-    vim.wo[win].signcolumn       = "no"
-    vim.wo[win].wrap             = false
+        map("n", ":enew<CR>")
+        map("f", ":Telescope find_files<CR>")
+        map("g", ":Telescope live_grep<CR>")
+        map("r", ":Telescope oldfiles<CR>")
+        map("q", ":qa<CR>")
+      end,
+    })
   end
-  vim.api.nvim_create_autocmd("VimEnter", {
-    once     = true,
-    callback = function()
-      if vim.fn.argc() == 0 then vim.schedule(open_dashboard) end
-    end,
-  })
 end
 
 -- ── noice.nvim ──────────────────────────────────────────────────────────────
@@ -440,7 +325,6 @@ vim.api.nvim_create_autocmd("FileType", {
   callback = function()
     local marker   = vim.fs.find({ ".git", "pyproject.toml", "setup.py", "setup.cfg" }, { upward = true })[1]
     local root     = marker and vim.fs.dirname(marker) or vim.uv.cwd()
-    -- Force pyright-python to use its managed Node (system node is too old).
     vim.env.PYRIGHT_PYTHON_GLOBAL_NODE = "0"
     vim.lsp.start({
       name         = "pyright",
